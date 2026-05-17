@@ -173,7 +173,7 @@ object NotificationUpdater {
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(dynamicIcon)
+            .setSmallIcon(R.drawable.ic_notification)
             .setCustomContentView(collapsedViews)
             .setCustomBigContentView(expandedViews)
             .setOngoing(true) // Sticky notification

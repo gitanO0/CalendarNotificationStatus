@@ -61,7 +61,7 @@ object CalendarHelper {
         return calendars
     }
 
-    fun getUpcomingEvents(context: Context, limit: Int = 7): List<CalendarEvent> {
+    fun getUpcomingEvents(context: Context, limit: Int = 20): List<CalendarEvent> {
         val events = mutableListOf<CalendarEvent>()
         
         val now = System.currentTimeMillis()
