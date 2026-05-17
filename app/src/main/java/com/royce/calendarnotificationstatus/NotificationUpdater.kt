@@ -28,7 +28,7 @@ import java.util.Date
 import java.util.Locale
 
 object NotificationUpdater {
-    private const val CHANNEL_ID = "calendar_status_channel"
+    private const val CHANNEL_ID = "calendar_status_channel_v2"
     private const val NOTIFICATION_ID = 1001
 
     fun updateNotification(context: Context) {
@@ -173,7 +173,7 @@ object NotificationUpdater {
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(dynamicIcon)
             .setCustomContentView(collapsedViews)
             .setCustomBigContentView(expandedViews)
             .setOngoing(true) // Sticky notification
