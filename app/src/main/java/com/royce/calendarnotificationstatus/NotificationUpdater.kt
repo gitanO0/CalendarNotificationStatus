@@ -22,13 +22,16 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.IconCompat
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toBitmap
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 object NotificationUpdater {
-    private const val CHANNEL_ID = "calendar_status_channel_v2"
+    private const val CHANNEL_ID = "calendar_status_channel_v3"
     private const val NOTIFICATION_ID = 1001
 
     fun updateNotification(context: Context) {
@@ -172,8 +175,10 @@ object NotificationUpdater {
             context, 0, intent, PendingIntent.FLAG_IMMUTABLE
         )
 
+        val appIconBitmap = ContextCompat.getDrawable(context, R.mipmap.ic_launcher)?.toBitmap()
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(dynamicIcon)
+            .setLargeIcon(appIconBitmap)
             .setCustomContentView(collapsedViews)
             .setCustomBigContentView(expandedViews)
             .setOngoing(true) // Sticky notification
@@ -273,4 +278,11 @@ object NotificationUpdater {
         return bitmap
     }
 }
+
+
+
+
+
+
+
 
