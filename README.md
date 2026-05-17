@@ -5,7 +5,7 @@
 
 A lightweight, fully native Android application that aggregates your upcoming calendar events and pins them to your notification drawer for quick and easy access.
 
-<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" width="100" alt="App Icon">
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Google_Calendar_icon_%282020%29.svg/512px-Google_Calendar_icon_%282020%29.svg.png" width="100" alt="App Icon">
 
 ## Features
 * **Status Bar Date Icon:** Dynamically renders today's date into a clean, stylized box directly in your Android status bar.
