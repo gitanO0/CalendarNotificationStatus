@@ -79,6 +79,7 @@ class MainActivity : ComponentActivity() {
                             color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier
                                 .align(Alignment.TopStart)
+                                .windowInsetsPadding(WindowInsets.statusBars)
                                 .padding(top = 16.dp, start = 16.dp)
                         )
 
