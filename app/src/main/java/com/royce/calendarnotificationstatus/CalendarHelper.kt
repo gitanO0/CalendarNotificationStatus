@@ -90,7 +90,7 @@ object CalendarHelper {
         
         if (selectedCalendars != null && selectedCalendars.isNotEmpty()) {
             val ids = selectedCalendars.joinToString(",")
-            selection = "${CalendarContract.Instances.CALENDAR_ID} IN ($ids)"
+            selection += " AND ${CalendarContract.Instances.CALENDAR_ID} IN ($ids)"
         }
 
         try {
