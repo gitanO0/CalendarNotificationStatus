@@ -201,6 +201,10 @@ object NotificationUpdater {
         }
         val notificationManager: NotificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        
+        notificationManager.deleteNotificationChannel("calendar_status_channel")
+        notificationManager.deleteNotificationChannel("calendar_status_channel_v2")
+
         notificationManager.createNotificationChannel(channel)
     }
 
