@@ -107,9 +107,10 @@ object NotificationUpdater {
                 // Add to expanded view always
                 expandedViews.addView(R.id.events_container, itemView)
                 
-                // Create intent to open Google Calendar for this specific event
-                val eventUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.id)
-                val openEventIntent = Intent(Intent.ACTION_VIEW).setData(eventUri)
+                // Create intent to open Google Calendar to the specific day
+                val builderUri = CalendarContract.CONTENT_URI.buildUpon().appendPath("time")
+                ContentUris.appendId(builderUri, event.beginTime)
+                val openEventIntent = Intent(Intent.ACTION_VIEW).setData(builderUri.build())
                 val openEventPendingIntent = PendingIntent.getActivity(
                     context,
                     event.id.toInt(), // Use event ID as request code to ensure unique intents

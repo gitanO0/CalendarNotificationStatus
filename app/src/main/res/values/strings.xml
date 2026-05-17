@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CalendarNotificationStatus</string>
+    <string name="app_name">Cal Notify Status</string>
     <string name="no_upcoming_events">No upcoming events</string>
     <string name="action_go">Go</string>
     <string name="baking_title">Baking with Gemini</string>

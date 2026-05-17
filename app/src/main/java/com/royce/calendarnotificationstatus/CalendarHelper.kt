@@ -15,7 +15,52 @@ data class CalendarEvent(
     val allDay: Boolean
 )
 
+data class CalendarInfo(
+    val id: Long,
+    val displayName: String,
+    val accountName: String
+)
+
 object CalendarHelper {
+
+    fun getAvailableCalendars(context: Context): List<CalendarInfo> {
+        val calendars = mutableListOf<CalendarInfo>()
+        val projection = arrayOf(
+            CalendarContract.Calendars._ID,
+            CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
+            CalendarContract.Calendars.ACCOUNT_NAME
+        )
+        
+        try {
+            val cursor: Cursor? = context.contentResolver.query(
+                CalendarContract.Calendars.CONTENT_URI,
+                projection,
+                null,
+                null,
+                "${CalendarContract.Calendars.ACCOUNT_NAME} ASC, ${CalendarContract.Calendars.CALENDAR_DISPLAY_NAME} ASC"
+            )
+            
+            cursor?.use {
+                val idIdx = it.getColumnIndexOrThrow(CalendarContract.Calendars._ID)
+                val nameIdx = it.getColumnIndexOrThrow(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME)
+                val accountIdx = it.getColumnIndexOrThrow(CalendarContract.Calendars.ACCOUNT_NAME)
+                
+                while (it.moveToNext()) {
+                    calendars.add(
+                        CalendarInfo(
+                            id = it.getLong(idIdx),
+                            displayName = it.getString(nameIdx) ?: "Unknown",
+                            accountName = it.getString(accountIdx) ?: "Unknown"
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return calendars
+    }
+
     fun getUpcomingEvents(context: Context, limit: Int = 7): List<CalendarEvent> {
         val events = mutableListOf<CalendarEvent>()
         
@@ -38,8 +83,15 @@ object CalendarHelper {
             CalendarContract.Instances.ALL_DAY
         )
 
-        // Null selection to force pulling all events regardless of system visibility flags.
-        val selection = null
+        val prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)
+        val selectedCalendars = prefs.getStringSet("selected_calendars", null)
+
+        var selection = "${CalendarContract.Instances.VISIBLE} = 1"
+        
+        if (selectedCalendars != null && selectedCalendars.isNotEmpty()) {
+            val ids = selectedCalendars.joinToString(",")
+            selection = "${CalendarContract.Instances.CALENDAR_ID} IN ($ids)"
+        }
 
         try {
             val cursor: Cursor? = context.contentResolver.query(
