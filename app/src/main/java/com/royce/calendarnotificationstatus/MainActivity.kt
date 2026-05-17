@@ -71,111 +71,105 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        // Top-left version text
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                            .windowInsetsPadding(WindowInsets.statusBars),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
                         Text(
-                            text = "v${BuildConfig.VERSION_NAME}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .windowInsetsPadding(WindowInsets.statusBars)
-                                .padding(top = 16.dp, start = 16.dp)
+                            text = "Calendar Notification Status",
+                            style = MaterialTheme.typography.headlineMedium,
+                            textAlign = TextAlign.Center
                         )
+                        
+                        Text(
+                            text = "Version v${BuildConfig.VERSION_NAME}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(32.dp))
 
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp)
-                                .padding(top = 32.dp), // Add some top padding so content doesn't overlap the absolute version text
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
+                        if (!permissionsGranted) {
                             Text(
-                                text = "Calendar Notification Status",
-                                style = MaterialTheme.typography.headlineMedium,
-                                textAlign = TextAlign.Center
+                                text = "App requires Calendar and Notification permissions to function properly.",
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.error
                             )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = {
+                                requestPermissionLauncher.launch(permissionsToRequest)
+                                // We check again immediately, but the real update happens in the launcher callback
+                                permissionsGranted = checkPermissions()
+                            }) {
+                                Text("Grant Permissions")
+                            }
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "Enable Persistent Notification",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Switch(
+                                    checked = isEnabled,
+                                    onCheckedChange = { checked ->
+                                        isEnabled = checked
+                                        prefs.edit().putBoolean("notification_enabled", checked).apply()
+                                        NotificationUpdater.updateNotification(this@MainActivity)
+                                    }
+                                )
+                            }
                             
                             Spacer(modifier = Modifier.height(32.dp))
+                            
+                            Text(
+                                text = "Synced Calendars",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = "Select which calendars to display. If none are selected, all visible calendars will be shown.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                            if (!permissionsGranted) {
-                                Text(
-                                    text = "App requires Calendar and Notification permissions to function properly.",
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Button(onClick = {
-                                    requestPermissionLauncher.launch(permissionsToRequest)
-                                    // We check again immediately, but the real update happens in the launcher callback
-                                    permissionsGranted = checkPermissions()
-                                }) {
-                                    Text("Grant Permissions")
-                                }
-                            } else {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = "Enable Persistent Notification",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Switch(
-                                        checked = isEnabled,
-                                        onCheckedChange = { checked ->
-                                            isEnabled = checked
-                                            prefs.edit().putBoolean("notification_enabled", checked).apply()
-                                            NotificationUpdater.updateNotification(this@MainActivity)
-                                        }
-                                    )
-                                }
-                                
-                                Spacer(modifier = Modifier.height(32.dp))
-                                
-                                Text(
-                                    text = "Synced Calendars",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    text = "Select which calendars to display. If none are selected, all visible calendars will be shown.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    textAlign = TextAlign.Center
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxWidth().weight(1f)
-                                ) {
-                                    items(availableCalendars) { calendar ->
-                                        val isSelected = selectedCalendarIds.contains(calendar.id.toString())
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Checkbox(
-                                                checked = isSelected,
-                                                onCheckedChange = { checked ->
-                                                    val newSet = selectedCalendarIds.toMutableSet()
-                                                    if (checked) {
-                                                        newSet.add(calendar.id.toString())
-                                                    } else {
-                                                        newSet.remove(calendar.id.toString())
-                                                    }
-                                                    selectedCalendarIds = newSet
-                                                    prefs.edit().putStringSet("selected_calendars", newSet).apply()
-                                                    if (isEnabled) {
-                                                        NotificationUpdater.updateNotification(this@MainActivity)
-                                                    }
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth().weight(1f)
+                            ) {
+                                items(availableCalendars) { calendar ->
+                                    val isSelected = selectedCalendarIds.contains(calendar.id.toString())
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Checkbox(
+                                            checked = isSelected,
+                                            onCheckedChange = { checked ->
+                                                val newSet = selectedCalendarIds.toMutableSet()
+                                                if (checked) {
+                                                    newSet.add(calendar.id.toString())
+                                                } else {
+                                                    newSet.remove(calendar.id.toString())
                                                 }
-                                            )
-                                            Column {
-                                                Text(text = calendar.displayName, style = MaterialTheme.typography.bodyLarge)
-                                                Text(text = calendar.accountName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                                                selectedCalendarIds = newSet
+                                                prefs.edit().putStringSet("selected_calendars", newSet).apply()
+                                                if (isEnabled) {
+                                                    NotificationUpdater.updateNotification(this@MainActivity)
+                                                }
                                             }
+                                        )
+                                        Column {
+                                            Text(text = calendar.displayName, style = MaterialTheme.typography.bodyLarge)
+                                            Text(text = calendar.accountName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                                         }
                                     }
                                 }
