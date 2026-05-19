@@ -122,8 +122,8 @@ object NotificationUpdater {
 
                 itemView.setInt(R.id.event_color, "setBackgroundColor", event.color)
                 itemView.setTextColor(R.id.event_title, titlePastelColor)
-                itemView.setTextColor(R.id.event_day_of_week, pastelColor)
-                itemView.setTextColor(R.id.event_day_number, pastelColor)
+                itemView.setTextColor(R.id.event_day_of_week, titlePastelColor)
+                itemView.setTextColor(R.id.event_day_number, titlePastelColor)
                 itemView.setTextColor(R.id.event_time, pastelColor)
                 
                 // Add to expanded view always
@@ -156,8 +156,8 @@ object NotificationUpdater {
                     }
                     collapsedItemView.setInt(R.id.event_color, "setBackgroundColor", event.color)
                     collapsedItemView.setTextColor(R.id.event_title, titlePastelColor)
-                    collapsedItemView.setTextColor(R.id.event_day_of_week, pastelColor)
-                    collapsedItemView.setTextColor(R.id.event_day_number, pastelColor)
+                    collapsedItemView.setTextColor(R.id.event_day_of_week, titlePastelColor)
+                    collapsedItemView.setTextColor(R.id.event_day_number, titlePastelColor)
                     collapsedItemView.setTextColor(R.id.event_time, pastelColor)
                     collapsedItemView.setOnClickPendingIntent(R.id.event_item_root, openEventPendingIntent)
                     collapsedViews.addView(R.id.events_container, collapsedItemView)
