@@ -15,8 +15,8 @@ android {
         applicationId = "com.royce.calendarnotificationstatus"
         minSdk = 26
         targetSdk = 36
-        versionCode = 6
-        versionName = "0.95"
+        versionCode = 7
+        versionName = "0.96"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

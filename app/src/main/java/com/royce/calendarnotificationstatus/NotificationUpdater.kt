@@ -198,6 +198,11 @@ object NotificationUpdater {
             context, 0, intent, PendingIntent.FLAG_IMMUTABLE
         )
 
+        val dismissIntent = Intent(context, NotificationDismissReceiver::class.java)
+        val deletePendingIntent = PendingIntent.getBroadcast(
+            context, 0, dismissIntent, PendingIntent.FLAG_IMMUTABLE
+        )
+
         val appIconBitmap = ContextCompat.getDrawable(context, R.mipmap.ic_launcher)?.toBitmap()
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(dynamicIcon)
@@ -207,6 +212,7 @@ object NotificationUpdater {
             .setOngoing(true) // Sticky notification
             .setPriority(NotificationCompat.PRIORITY_LOW) // Usually preferred for sticky items so it doesn't buzz
             .setContentIntent(pendingIntent)
+            .setDeleteIntent(deletePendingIntent)
 
         notificationManager.notify(NOTIFICATION_ID, builder.build())
 

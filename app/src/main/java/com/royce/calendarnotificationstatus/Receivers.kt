@@ -26,3 +26,14 @@ class AlarmReceiver : BroadcastReceiver() {
         NotificationUpdater.updateNotification(context)
     }
 }
+
+class NotificationDismissReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)
+        val isEnabled = prefs.getBoolean("notification_enabled", false)
+        if (isEnabled) {
+            // Re-add the notification since it's enabled but was dismissed
+            NotificationUpdater.updateNotification(context)
+        }
+    }
+}
