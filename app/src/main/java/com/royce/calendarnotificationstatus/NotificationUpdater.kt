@@ -113,8 +113,15 @@ object NotificationUpdater {
                 hsv[2] = Math.max(hsv[2], 0.9f)
                 val pastelColor = Color.HSVToColor(hsv)
 
+                val titleHsv = FloatArray(3)
+                Color.colorToHSV(event.color, titleHsv)
+                // Keep the title slightly more saturated so it pops
+                titleHsv[1] = titleHsv[1] * 0.55f
+                titleHsv[2] = Math.max(titleHsv[2], 0.9f)
+                val titlePastelColor = Color.HSVToColor(titleHsv)
+
                 itemView.setInt(R.id.event_color, "setBackgroundColor", event.color)
-                itemView.setTextColor(R.id.event_title, pastelColor)
+                itemView.setTextColor(R.id.event_title, titlePastelColor)
                 itemView.setTextColor(R.id.event_day_of_week, pastelColor)
                 itemView.setTextColor(R.id.event_day_number, pastelColor)
                 itemView.setTextColor(R.id.event_time, pastelColor)
@@ -148,7 +155,7 @@ object NotificationUpdater {
                         collapsedItemView.setTextViewText(R.id.event_time, "$startStr - $endStr")
                     }
                     collapsedItemView.setInt(R.id.event_color, "setBackgroundColor", event.color)
-                    collapsedItemView.setTextColor(R.id.event_title, pastelColor)
+                    collapsedItemView.setTextColor(R.id.event_title, titlePastelColor)
                     collapsedItemView.setTextColor(R.id.event_day_of_week, pastelColor)
                     collapsedItemView.setTextColor(R.id.event_day_number, pastelColor)
                     collapsedItemView.setTextColor(R.id.event_time, pastelColor)
