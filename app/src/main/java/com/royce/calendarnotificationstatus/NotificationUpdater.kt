@@ -105,11 +105,19 @@ object NotificationUpdater {
                     itemView.setTextViewText(R.id.event_time, "$startStr - $endStr")
                 }
                 
+                val hsv = FloatArray(3)
+                Color.colorToHSV(event.color, hsv)
+                // Drop saturation drastically to pull it towards white/pastel
+                hsv[1] = hsv[1] * 0.3f
+                // Force high brightness so it remains white rather than gray
+                hsv[2] = Math.max(hsv[2], 0.9f)
+                val pastelColor = Color.HSVToColor(hsv)
+
                 itemView.setInt(R.id.event_color, "setBackgroundColor", event.color)
-                itemView.setTextColor(R.id.event_title, event.color)
-                itemView.setTextColor(R.id.event_day_of_week, event.color)
-                itemView.setTextColor(R.id.event_day_number, event.color)
-                itemView.setTextColor(R.id.event_time, event.color)
+                itemView.setTextColor(R.id.event_title, pastelColor)
+                itemView.setTextColor(R.id.event_day_of_week, pastelColor)
+                itemView.setTextColor(R.id.event_day_number, pastelColor)
+                itemView.setTextColor(R.id.event_time, pastelColor)
                 
                 // Add to expanded view always
                 expandedViews.addView(R.id.events_container, itemView)
@@ -140,10 +148,10 @@ object NotificationUpdater {
                         collapsedItemView.setTextViewText(R.id.event_time, "$startStr - $endStr")
                     }
                     collapsedItemView.setInt(R.id.event_color, "setBackgroundColor", event.color)
-                    collapsedItemView.setTextColor(R.id.event_title, event.color)
-                    collapsedItemView.setTextColor(R.id.event_day_of_week, event.color)
-                    collapsedItemView.setTextColor(R.id.event_day_number, event.color)
-                    collapsedItemView.setTextColor(R.id.event_time, event.color)
+                    collapsedItemView.setTextColor(R.id.event_title, pastelColor)
+                    collapsedItemView.setTextColor(R.id.event_day_of_week, pastelColor)
+                    collapsedItemView.setTextColor(R.id.event_day_number, pastelColor)
+                    collapsedItemView.setTextColor(R.id.event_time, pastelColor)
                     collapsedItemView.setOnClickPendingIntent(R.id.event_item_root, openEventPendingIntent)
                     collapsedViews.addView(R.id.events_container, collapsedItemView)
                 }
