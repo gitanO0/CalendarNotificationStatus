@@ -106,6 +106,10 @@ object NotificationUpdater {
                 }
                 
                 itemView.setInt(R.id.event_color, "setBackgroundColor", event.color)
+                itemView.setTextColor(R.id.event_title, event.color)
+                itemView.setTextColor(R.id.event_day_of_week, event.color)
+                itemView.setTextColor(R.id.event_day_number, event.color)
+                itemView.setTextColor(R.id.event_time, event.color)
                 
                 // Add to expanded view always
                 expandedViews.addView(R.id.events_container, itemView)
@@ -136,6 +140,10 @@ object NotificationUpdater {
                         collapsedItemView.setTextViewText(R.id.event_time, "$startStr - $endStr")
                     }
                     collapsedItemView.setInt(R.id.event_color, "setBackgroundColor", event.color)
+                    collapsedItemView.setTextColor(R.id.event_title, event.color)
+                    collapsedItemView.setTextColor(R.id.event_day_of_week, event.color)
+                    collapsedItemView.setTextColor(R.id.event_day_number, event.color)
+                    collapsedItemView.setTextColor(R.id.event_time, event.color)
                     collapsedItemView.setOnClickPendingIntent(R.id.event_item_root, openEventPendingIntent)
                     collapsedViews.addView(R.id.events_container, collapsedItemView)
                 }
