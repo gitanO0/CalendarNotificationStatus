@@ -88,12 +88,23 @@ object NotificationUpdater {
             expandedViews.addView(R.id.events_container, emptyViewExpanded)
         } else {
             val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+            val dayOfYearFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            var previousDayStr: String? = null
             
             for ((index, event) in events.withIndex()) {
+                val eventDate = Date(event.beginTime)
+                val currentDayStr = dayOfYearFormat.format(eventDate)
+
+                // Add day separator if the day changes (but not before the first event)
+                if (previousDayStr != null && previousDayStr != currentDayStr) {
+                    val separatorView = RemoteViews(context.packageName, R.layout.notification_day_separator)
+                    expandedViews.addView(R.id.events_container, separatorView)
+                }
+                previousDayStr = currentDayStr
+
                 val itemView = RemoteViews(context.packageName, R.layout.notification_event_item)
                 itemView.setTextViewText(R.id.event_title, event.title)
                 
-                val eventDate = Date(event.beginTime)
                 itemView.setTextViewText(R.id.event_day_of_week, dayOfWeekFormat.format(eventDate))
                 itemView.setTextViewText(R.id.event_day_number, dayNumberFormat.format(eventDate))
                 
