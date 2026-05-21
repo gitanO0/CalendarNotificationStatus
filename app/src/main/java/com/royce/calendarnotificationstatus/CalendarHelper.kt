@@ -12,7 +12,9 @@ data class CalendarEvent(
     val beginTime: Long,
     val endTime: Long,
     val color: Int,
-    val allDay: Boolean
+    val allDay: Boolean,
+    val location: String?,
+    val description: String?
 )
 
 data class CalendarInfo(
@@ -81,7 +83,9 @@ object CalendarHelper {
             CalendarContract.Instances.END,
             CalendarContract.Instances.DISPLAY_COLOR,
             CalendarContract.Instances.ALL_DAY,
-            CalendarContract.Instances.SELF_ATTENDEE_STATUS
+            CalendarContract.Instances.SELF_ATTENDEE_STATUS,
+            CalendarContract.Instances.EVENT_LOCATION,
+            CalendarContract.Instances.DESCRIPTION
         )
 
         val prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)
@@ -116,7 +120,7 @@ object CalendarHelper {
                     calCursor?.close()
                 } catch (e: Exception) {}
 
-                events.add(CalendarEvent(-1, "OS returned 0 Events. Visible Calendars: $calendarCount", now, now + 1000, 0, false))
+                events.add(CalendarEvent(-1, "OS returned 0 Events. Visible Calendars: $calendarCount", now, now + 1000, 0, false, null, null))
             }
 
             cursor?.use {
@@ -127,6 +131,8 @@ object CalendarHelper {
                 val colorIdx = it.getColumnIndexOrThrow(CalendarContract.Instances.DISPLAY_COLOR)
                 val allDayIdx = it.getColumnIndexOrThrow(CalendarContract.Instances.ALL_DAY)
                 val selfAttendeeStatusIdx = it.getColumnIndexOrThrow(CalendarContract.Instances.SELF_ATTENDEE_STATUS)
+                val locationIdx = it.getColumnIndexOrThrow(CalendarContract.Instances.EVENT_LOCATION)
+                val descIdx = it.getColumnIndexOrThrow(CalendarContract.Instances.DESCRIPTION)
 
                 while (it.moveToNext() && events.size < limit) {
                     val title = it.getString(titleIdx) ?: "No Title"
@@ -134,6 +140,8 @@ object CalendarHelper {
                     val endTime = it.getLong(endIdx)
                     val isAllDay = it.getInt(allDayIdx) == 1
                     val selfAttendeeStatus = it.getInt(selfAttendeeStatusIdx)
+                    val location = it.getString(locationIdx)
+                    val description = it.getString(descIdx)
                     
                     // Skip if the event has already ended
                     if (endTime <= now) continue
@@ -157,7 +165,9 @@ object CalendarHelper {
                             beginTime = begin,
                             endTime = endTime,
                             color = it.getInt(colorIdx),
-                            allDay = isAllDay
+                            allDay = isAllDay,
+                            location = location,
+                            description = description
                         )
                     )
                 }

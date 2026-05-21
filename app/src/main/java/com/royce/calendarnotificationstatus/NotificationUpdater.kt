@@ -13,6 +13,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Build
 import android.provider.CalendarContract
 import android.content.ContentUris
@@ -91,6 +92,9 @@ object NotificationUpdater {
             val dayOfYearFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             var previousDayStr: String? = null
             
+            // Regex to find common meeting links in location or description
+            val meetingUrlRegex = Regex("""https?://(?:[a-zA-Z0-9-]+\.)?(?:zoom\.us/j/|meet\.google\.com/|teams\.microsoft\.com/l/meetup-join/|webex\.com/)[^\s]+""")
+            
             for ((index, event) in events.withIndex()) {
                 val eventDate = Date(event.beginTime)
                 val currentDayStr = dayOfYearFormat.format(eventDate)
@@ -150,6 +154,52 @@ object NotificationUpdater {
                     itemView.setTextColor(R.id.pulse_faded, titlePastelColor)
                 } else {
                     itemView.setViewVisibility(R.id.pulse_flipper, android.view.View.GONE)
+                }
+
+                // Check for Smart Intent Actions
+                val meetingUrl = event.location?.let { meetingUrlRegex.find(it)?.value } 
+                    ?: event.description?.let { meetingUrlRegex.find(it)?.value }
+
+                val hasMeetingUrl = meetingUrl != null
+                val hasPhysicalLocation = !event.location.isNullOrBlank() && !hasMeetingUrl
+
+                if (hasMeetingUrl || hasPhysicalLocation) {
+                    itemView.setViewVisibility(R.id.action_container, android.view.View.VISIBLE)
+                    
+                    if (hasMeetingUrl) {
+                        itemView.setViewVisibility(R.id.action_join, android.view.View.VISIBLE)
+                        itemView.setTextColor(R.id.action_join, pastelColor)
+                        
+                        val joinIntent = Intent(Intent.ACTION_VIEW, Uri.parse(meetingUrl))
+                        val joinPendingIntent = PendingIntent.getActivity(
+                            context,
+                            (event.id * 10 + 1).toInt(), // Unique request code
+                            joinIntent,
+                            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                        )
+                        itemView.setOnClickPendingIntent(R.id.action_join, joinPendingIntent)
+                    } else {
+                        itemView.setViewVisibility(R.id.action_join, android.view.View.GONE)
+                    }
+
+                    if (hasPhysicalLocation) {
+                        itemView.setViewVisibility(R.id.action_map, android.view.View.VISIBLE)
+                        itemView.setTextColor(R.id.action_map, pastelColor)
+                        
+                        val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(event.location)}")
+                        val mapIntent = Intent(Intent.ACTION_VIEW, mapUri)
+                        val mapPendingIntent = PendingIntent.getActivity(
+                            context,
+                            (event.id * 10 + 2).toInt(), // Unique request code
+                            mapIntent,
+                            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                        )
+                        itemView.setOnClickPendingIntent(R.id.action_map, mapPendingIntent)
+                    } else {
+                        itemView.setViewVisibility(R.id.action_map, android.view.View.GONE)
+                    }
+                } else {
+                    itemView.setViewVisibility(R.id.action_container, android.view.View.GONE)
                 }
                 
                 // Add to expanded view always
