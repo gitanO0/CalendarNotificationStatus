@@ -12,6 +12,7 @@ A lightweight, fully native Android application that aggregates your upcoming ca
 * **Persistent Notification:** Keeps your schedule accessible via a sticky, high-priority ongoing notification.
 * **Smart Event Aggregation:** Queries the native Android `CalendarProvider` to display up to 90 days of upcoming events.
 * **Custom Calendar Selection:** Automatically detects available calendars (shared, subscribed, or owned) and lets you choose exactly which ones to display.
+* **Instant Background Sync:** Utilizes Android's native `JobScheduler` to instantly detect calendar database changes (adds, edits, deletes) and refresh the notification without draining your battery.
 * **Deep Linking:** Tap any specific event in the notification to instantly open its details page in the official Google Calendar app.
 * **Smart Actions:** Automatically generates "Join Call" buttons for Zoom, Google Meet, Teams, and Webex links, and "Map" buttons for physical locations directly inside the notification.
 * **Happening Now Pulse:** Events blink to grab your attention when they are starting within 10 minutes or currently active.

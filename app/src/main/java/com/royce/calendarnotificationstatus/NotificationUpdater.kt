@@ -5,6 +5,9 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.job.JobInfo
+import android.app.job.JobScheduler
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,6 +15,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.net.Uri
@@ -33,6 +38,7 @@ import java.util.Locale
 object NotificationUpdater {
     private const val CHANNEL_ID = "calendar_status_channel_v8"
     private const val NOTIFICATION_ID = 1001
+    private const val CALENDAR_SYNC_JOB_ID = 2001
 
     fun updateNotification(context: Context) {
         if (ContextCompat.checkSelfPermission(
@@ -68,11 +74,22 @@ object NotificationUpdater {
         val expandedViews = RemoteViews(context.packageName, R.layout.notification_calendar)
         
         val now = Calendar.getInstance()
+        val currentTime = System.currentTimeMillis()
         val dayNumberFormat = SimpleDateFormat("d", Locale.getDefault())
         val dayOfWeekFormat = SimpleDateFormat("EEE", Locale.getDefault())
         val dayNumber = dayNumberFormat.format(now.time)
 
-        val dynamicBitmap = createDynamicCalendarBitmap(context, dayNumber)
+        // Check if any event is currently active or starting within 10 minutes
+        var hasActiveEvent = false
+        for (event in events) {
+            val pulseStartTime = event.beginTime - (10 * 60 * 1000)
+            if (currentTime in pulseStartTime..event.endTime) {
+                hasActiveEvent = true
+                break
+            }
+        }
+
+        val dynamicBitmap = createDynamicCalendarBitmap(context, dayNumber, hasActiveEvent)
         val dynamicIcon = IconCompat.createWithBitmap(dynamicBitmap)
 
         collapsedViews.removeAllViews(R.id.events_container)
@@ -154,7 +171,6 @@ object NotificationUpdater {
                 itemView.setTextColor(R.id.event_time, pastelColor)
 
                 // Add happening now pulse to title if the event starts in less than 10 minutes or is currently active
-                val currentTime = System.currentTimeMillis()
                 val pulseStartTime = event.beginTime - (10 * 60 * 1000)
                 
                 if (currentTime in pulseStartTime..event.endTime) {
@@ -337,6 +353,30 @@ object NotificationUpdater {
 
         // Schedule next update if needed
         scheduleUpdateAlarm(context, nextEventTimeMillis)
+        
+        // Ensure JobScheduler is actively listening for calendar changes
+        scheduleCalendarSyncJob(context)
+    }
+
+    private fun scheduleCalendarSyncJob(context: Context) {
+        val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+        val componentName = ComponentName(context, CalendarSyncJobService::class.java)
+
+        val jobInfo = JobInfo.Builder(CALENDAR_SYNC_JOB_ID, componentName)
+            .addTriggerContentUri(
+                JobInfo.TriggerContentUri(
+                    CalendarContract.CONTENT_URI,
+                    JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS
+                )
+            )
+            // Delay before triggering the job after a change is detected (in ms).
+            // This groups multiple rapid changes together.
+            .setTriggerContentUpdateDelay(1000)
+            // Maximum delay before the job is guaranteed to trigger after a change (in ms).
+            .setTriggerContentMaxDelay(3000)
+            .build()
+
+        jobScheduler.schedule(jobInfo)
     }
 
     private fun createNotificationChannel(context: Context) {
@@ -395,9 +435,12 @@ object NotificationUpdater {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         alarmManager.cancel(pendingIntent)
+        
+        val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+        jobScheduler.cancel(CALENDAR_SYNC_JOB_ID)
     }
 
-    private fun createDynamicCalendarBitmap(context: Context, dayNumber: String): Bitmap {
+    private fun createDynamicCalendarBitmap(context: Context, dayNumber: String, hasActiveEvent: Boolean): Bitmap {
         // Density independent size. Standard status bar icon size is 24dp.
         // MUST be 24dp or Android will reject it for the header small icon and fallback to app logo!
         val density = context.resources.displayMetrics.density
@@ -406,37 +449,63 @@ object NotificationUpdater {
         val bitmap = createBitmap(size, size)
         val canvas = Canvas(bitmap)
 
-        // Draw the rounded box border
-        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE // The system will tint this appropriately
-            style = Paint.Style.STROKE
-            strokeWidth = 2.0f * density
-        }
-
         val padding = 1 * density // Reduced padding to allow more text room
         val rect = RectF(padding, padding, size - padding, size - padding)
-        val cornerRadius = 4 * density
-        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, borderPaint)
 
-        // Draw the day number text
-        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
-            // Adjust text size to bump up visibility
-            textSize = 16 * density
-            // Add a small stroke to the text itself to make it even bolder
-            strokeWidth = 0.5f * density
-            style = Paint.Style.FILL_AND_STROKE
+        if (hasActiveEvent) {
+            // Draw solid circle
+            val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE
+                style = Paint.Style.FILL
+            }
+            val radius = (size / 2f) - padding
+            canvas.drawCircle(size / 2f, size / 2f, radius, circlePaint)
+            
+            // Draw the day number text (punched out)
+            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.TRANSPARENT // Color doesn't matter for CLEAR
+                textAlign = Paint.Align.CENTER
+                typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
+                textSize = 16 * density
+                strokeWidth = 0.5f * density
+                style = Paint.Style.FILL_AND_STROKE
+                xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+            }
+            
+            val textBounds = android.graphics.Rect()
+            textPaint.getTextBounds(dayNumber, 0, dayNumber.length, textBounds)
+            val xPos = canvas.width / 2f
+            val yPos = (canvas.height / 2f) - ((textPaint.descent() + textPaint.ascent()) / 2f)
+            
+            canvas.drawText(dayNumber, xPos, yPos, textPaint)
+        } else {
+            // Draw the rounded box border
+            val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE // The system will tint this appropriately
+                style = Paint.Style.STROKE
+                strokeWidth = 2.0f * density
+            }
+
+            val cornerRadius = 4 * density
+            canvas.drawRoundRect(rect, cornerRadius, cornerRadius, borderPaint)
+
+            // Draw the day number text
+            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE
+                textAlign = Paint.Align.CENTER
+                typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
+                textSize = 16 * density
+                strokeWidth = 0.5f * density
+                style = Paint.Style.FILL_AND_STROKE
+            }
+
+            val textBounds = android.graphics.Rect()
+            textPaint.getTextBounds(dayNumber, 0, dayNumber.length, textBounds)
+            val xPos = canvas.width / 2f
+            val yPos = (canvas.height / 2f) - ((textPaint.descent() + textPaint.ascent()) / 2f)
+
+            canvas.drawText(dayNumber, xPos, yPos, textPaint)
         }
-
-        // Calculate vertical centering
-        val textBounds = android.graphics.Rect()
-        textPaint.getTextBounds(dayNumber, 0, dayNumber.length, textBounds)
-        val xPos = canvas.width / 2f
-        val yPos = (canvas.height / 2f) - ((textPaint.descent() + textPaint.ascent()) / 2f)
-
-        canvas.drawText(dayNumber, xPos, yPos, textPaint)
 
         return bitmap
     }

@@ -28,15 +28,10 @@
             </intent-filter>
         </activity>
 
-        <receiver
-            android:name=".CalendarUpdateReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.PROVIDER_CHANGED" />
-                <data android:scheme="content" />
-                <data android:host="com.android.calendar" />
-            </intent-filter>
-        </receiver>
+        <service
+            android:name=".CalendarSyncJobService"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <receiver
             android:name=".BootReceiver"
