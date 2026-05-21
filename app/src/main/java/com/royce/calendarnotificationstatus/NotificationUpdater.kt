@@ -1,6 +1,7 @@
 package com.royce.calendarnotificationstatus
 
 import android.app.AlarmManager
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -24,15 +25,13 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.core.graphics.drawable.toBitmap
-import androidx.core.graphics.drawable.toBitmap
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 object NotificationUpdater {
-    private const val CHANNEL_ID = "calendar_status_channel_v3"
+    private const val CHANNEL_ID = "calendar_status_channel_v8"
     private const val NOTIFICATION_ID = 1001
 
     fun updateNotification(context: Context) {
@@ -161,14 +160,15 @@ object NotificationUpdater {
                 if (currentTime in pulseStartTime..event.endTime) {
                     itemView.setViewVisibility(R.id.event_title_flipper, android.view.View.VISIBLE)
                     itemView.setViewVisibility(R.id.event_title_static, android.view.View.GONE)
+                    itemView.setInt(R.id.event_title_flipper, "setFlipInterval", 500)
+                    // Reset to first child (brightest) when we update, which happens periodically
+                    itemView.setInt(R.id.event_title_flipper, "setDisplayedChild", 0)
                     
                     itemView.setTextViewText(R.id.event_title_frame1, event.title)
                     itemView.setTextViewText(R.id.event_title_frame2, event.title)
-                    itemView.setTextViewText(R.id.event_title_frame3, event.title)
 
                     itemView.setTextColor(R.id.event_title_frame1, titlePastelColor)
                     itemView.setTextColor(R.id.event_title_frame2, titlePastelColor)
-                    itemView.setTextColor(R.id.event_title_frame3, titlePastelColor)
                 } else {
                     itemView.setViewVisibility(R.id.event_title_flipper, android.view.View.GONE)
                     itemView.setViewVisibility(R.id.event_title_static, android.view.View.VISIBLE)
@@ -260,14 +260,14 @@ object NotificationUpdater {
                     if (currentTime in pulseStartTime..event.endTime) {
                         collapsedItemView.setViewVisibility(R.id.event_title_flipper, android.view.View.VISIBLE)
                         collapsedItemView.setViewVisibility(R.id.event_title_static, android.view.View.GONE)
+                        collapsedItemView.setInt(R.id.event_title_flipper, "setFlipInterval", 500)
+                        collapsedItemView.setInt(R.id.event_title_flipper, "setDisplayedChild", 0)
                         
                         collapsedItemView.setTextViewText(R.id.event_title_frame1, event.title)
                         collapsedItemView.setTextViewText(R.id.event_title_frame2, event.title)
-                        collapsedItemView.setTextViewText(R.id.event_title_frame3, event.title)
 
                         collapsedItemView.setTextColor(R.id.event_title_frame1, titlePastelColor)
                         collapsedItemView.setTextColor(R.id.event_title_frame2, titlePastelColor)
-                        collapsedItemView.setTextColor(R.id.event_title_frame3, titlePastelColor)
                     } else {
                         collapsedItemView.setViewVisibility(R.id.event_title_flipper, android.view.View.GONE)
                         collapsedItemView.setViewVisibility(R.id.event_title_static, android.view.View.VISIBLE)
@@ -326,7 +326,10 @@ object NotificationUpdater {
             .setCustomContentView(collapsedViews)
             .setCustomBigContentView(expandedViews)
             .setOngoing(true) // Sticky notification
-            .setPriority(NotificationCompat.PRIORITY_LOW) // Usually preferred for sticky items so it doesn't buzz
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setOnlyAlertOnce(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(pendingIntent)
             .setDeleteIntent(deletePendingIntent)
 
@@ -339,16 +342,24 @@ object NotificationUpdater {
     private fun createNotificationChannel(context: Context) {
         val name = "Calendar Status"
         val descriptionText = "Shows upcoming calendar events"
-        val importance = NotificationManager.IMPORTANCE_LOW
+        val importance = NotificationManager.IMPORTANCE_HIGH
         val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
             description = descriptionText
             setShowBadge(false)
+            setSound(null, null)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            enableVibration(false)
         }
         val notificationManager: NotificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         notificationManager.deleteNotificationChannel("calendar_status_channel")
         notificationManager.deleteNotificationChannel("calendar_status_channel_v2")
+        notificationManager.deleteNotificationChannel("calendar_status_channel_v3")
+        notificationManager.deleteNotificationChannel("calendar_status_channel_v4")
+        notificationManager.deleteNotificationChannel("calendar_status_channel_v5")
+        notificationManager.deleteNotificationChannel("calendar_status_channel_v6")
+        notificationManager.deleteNotificationChannel("calendar_status_channel_v7")
 
         notificationManager.createNotificationChannel(channel)
     }
@@ -399,7 +410,7 @@ object NotificationUpdater {
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE // The system will tint this appropriately
             style = Paint.Style.STROKE
-            strokeWidth = 1 * density // Reduced thickness
+            strokeWidth = 2.0f * density
         }
 
         val padding = 1 * density // Reduced padding to allow more text room
@@ -411,9 +422,12 @@ object NotificationUpdater {
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
             // Adjust text size to bump up visibility
-            textSize = 15 * density
+            textSize = 16 * density
+            // Add a small stroke to the text itself to make it even bolder
+            strokeWidth = 0.5f * density
+            style = Paint.Style.FILL_AND_STROKE
         }
 
         // Calculate vertical centering

@@ -90,17 +90,6 @@
                     android:textStyle="bold"
                     android:alpha="0.6" />
 
-                <TextView
-                    android:id="@+id/event_title_frame3"
-                    style="@style/TextAppearance.Compat.Notification.Title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:alpha="0.3" />
-
             </ViewFlipper>
         </FrameLayout>
 
