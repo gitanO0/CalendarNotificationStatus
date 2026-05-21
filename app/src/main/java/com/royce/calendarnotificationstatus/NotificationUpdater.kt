@@ -92,8 +92,8 @@ object NotificationUpdater {
             val dayOfYearFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             var previousDayStr: String? = null
             
-            // Regex to find common meeting links in location or description
-            val meetingUrlRegex = Regex("""https?://(?:[a-zA-Z0-9-]+\.)?(?:zoom\.us/j/|meet\.google\.com/|teams\.microsoft\.com/l/meetup-join/|webex\.com/)[^\s]+""")
+            // Regex to find Zoom meeting links in location or description
+            val meetingUrlRegex = Regex("""https?://(?:[a-zA-Z0-9-]+\.)?zoom\.us/j/[^\s]+""")
             
             for ((index, event) in events.withIndex()) {
                 val eventDate = Date(event.beginTime)
