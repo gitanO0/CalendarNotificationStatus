@@ -136,6 +136,21 @@ object NotificationUpdater {
                 itemView.setTextColor(R.id.event_day_of_week, titlePastelColor)
                 itemView.setTextColor(R.id.event_day_number, titlePastelColor)
                 itemView.setTextColor(R.id.event_time, pastelColor)
+
+                // Add happening now pulse if the event is currently active
+                val currentTime = System.currentTimeMillis()
+                if (currentTime in event.beginTime..event.endTime) {
+                    itemView.setViewVisibility(R.id.pulse_flipper, android.view.View.VISIBLE)
+                    
+                    // Note: RemoteViews doesn't allow changing backgroundTint directly on <shape> drawables
+                    // easily without API 31+. Instead, we will tint the text itself to match the pastel color
+                    // for the 'NOW' indicator to tie it into the theme.
+                    itemView.setTextColor(R.id.pulse_active, titlePastelColor)
+                    itemView.setTextColor(R.id.pulse_dim, titlePastelColor)
+                    itemView.setTextColor(R.id.pulse_faded, titlePastelColor)
+                } else {
+                    itemView.setViewVisibility(R.id.pulse_flipper, android.view.View.GONE)
+                }
                 
                 // Add to expanded view always
                 expandedViews.addView(R.id.events_container, itemView)
@@ -175,7 +190,6 @@ object NotificationUpdater {
                 }
 
                 // Track the earliest next event end time to schedule an update alarm
-                val currentTime = System.currentTimeMillis()
                 if (event.endTime > currentTime) {
                     if (nextEventTimeMillis == null || event.endTime < nextEventTimeMillis) {
                         nextEventTimeMillis = event.endTime
