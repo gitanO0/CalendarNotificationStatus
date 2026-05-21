@@ -20,6 +20,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.royce.calendarnotificationstatus.ui.theme.CalendarNotificationStatusTheme
 
+enum class MeetingPlatform(val displayName: String, val regexSegment: String) {
+    ZOOM("Zoom", """(?:zoom\.us/j/)"""),
+    MEET("Google Meet", """(?:meet\.google\.com/)"""),
+    TEAMS("Microsoft Teams", """(?:teams\.microsoft\.com/l/meetup-join/)"""),
+    WEBEX("Webex", """(?:webex\.com/)""")
+}
+
 class MainActivity : ComponentActivity() {
 
     private val permissionsToRequest = mutableListOf<String>().apply {
@@ -66,6 +73,9 @@ class MainActivity : ComponentActivity() {
                     }
                     var hideAllDayEvents by remember {
                         mutableStateOf(prefs.getBoolean("hide_all_day_events", false))
+                    }
+                    var enabledMeetingPlatforms by remember {
+                        mutableStateOf(prefs.getStringSet("enabled_meeting_platforms", setOf(MeetingPlatform.ZOOM.name)) ?: setOf(MeetingPlatform.ZOOM.name))
                     }
 
                     LaunchedEffect(permissionsGranted) {
@@ -154,21 +164,64 @@ class MainActivity : ComponentActivity() {
                             
                             Spacer(modifier = Modifier.height(32.dp))
                             
-                            Text(
-                                text = "Synced Calendars",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = "Select which calendars to display. If none are selected, all visible calendars will be shown.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-
                             LazyColumn(
                                 modifier = Modifier.fillMaxWidth().weight(1f)
                             ) {
+                                item {
+                                    Text(
+                                        text = "Meeting Links Detection",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Text(
+                                        text = "Select which platforms generate a 'Join Call' button.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                                
+                                items(MeetingPlatform.entries.toTypedArray()) { platform ->
+                                    val isSelected = enabledMeetingPlatforms.contains(platform.name)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Checkbox(
+                                            checked = isSelected,
+                                            onCheckedChange = { checked ->
+                                                val newSet = enabledMeetingPlatforms.toMutableSet()
+                                                if (checked) {
+                                                    newSet.add(platform.name)
+                                                } else {
+                                                    newSet.remove(platform.name)
+                                                }
+                                                enabledMeetingPlatforms = newSet
+                                                prefs.edit().putStringSet("enabled_meeting_platforms", newSet).apply()
+                                                if (isEnabled) {
+                                                    NotificationUpdater.updateNotification(this@MainActivity)
+                                                }
+                                            }
+                                        )
+                                        Text(text = platform.displayName, style = MaterialTheme.typography.bodyLarge)
+                                    }
+                                }
+
+                                item {
+                                    Spacer(modifier = Modifier.height(32.dp))
+                                    Text(
+                                        text = "Synced Calendars",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Text(
+                                        text = "Select which calendars to display. If none are selected, all visible calendars will be shown.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
+
                                 items(availableCalendars) { calendar ->
                                     val isSelected = selectedCalendarIds.contains(calendar.id.toString())
                                     Row(

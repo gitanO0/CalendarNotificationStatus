@@ -92,8 +92,23 @@ object NotificationUpdater {
             val dayOfYearFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             var previousDayStr: String? = null
             
-            // Regex to find Zoom meeting links in location or description
-            val meetingUrlRegex = Regex("""https?://(?:[a-zA-Z0-9-]+\.)?zoom\.us/j/[^\s]+""")
+            // Get enabled meeting platforms from SharedPreferences
+            val enabledPlatforms = prefs.getStringSet("enabled_meeting_platforms", setOf(MeetingPlatform.ZOOM.name)) ?: setOf(MeetingPlatform.ZOOM.name)
+            
+            // Dynamically build the meeting URL regex based on user settings
+            val meetingUrlRegex: Regex? = if (enabledPlatforms.isNotEmpty()) {
+                val segments = enabledPlatforms.mapNotNull { platformName ->
+                    try {
+                        MeetingPlatform.valueOf(platformName).regexSegment
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                if (segments.isNotEmpty()) {
+                    val combinedSegments = segments.joinToString("|")
+                    Regex("""https?://(?:[a-zA-Z0-9-]+\.)?($combinedSegments)[^\s]+""")
+                } else null
+            } else null
             
             for ((index, event) in events.withIndex()) {
                 val eventDate = Date(event.beginTime)
@@ -157,8 +172,10 @@ object NotificationUpdater {
                 }
 
                 // Check for Smart Intent Actions
-                val meetingUrl = event.location?.let { meetingUrlRegex.find(it)?.value } 
-                    ?: event.description?.let { meetingUrlRegex.find(it)?.value }
+                val meetingUrl = if (meetingUrlRegex != null) {
+                    event.location?.let { meetingUrlRegex.find(it)?.value } 
+                        ?: event.description?.let { meetingUrlRegex.find(it)?.value }
+                } else null
 
                 val hasMeetingUrl = meetingUrl != null
                 val hasPhysicalLocation = !event.location.isNullOrBlank() && !hasMeetingUrl
