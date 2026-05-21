@@ -80,11 +80,13 @@ object CalendarHelper {
             CalendarContract.Instances.BEGIN,
             CalendarContract.Instances.END,
             CalendarContract.Instances.DISPLAY_COLOR,
-            CalendarContract.Instances.ALL_DAY
+            CalendarContract.Instances.ALL_DAY,
+            CalendarContract.Instances.SELF_ATTENDEE_STATUS
         )
 
         val prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)
         val selectedCalendars = prefs.getStringSet("selected_calendars", null)
+        val hideAllDayEvents = prefs.getBoolean("hide_all_day_events", false)
 
         var selection = "${CalendarContract.Instances.VISIBLE} = 1"
         
@@ -124,14 +126,23 @@ object CalendarHelper {
                 val endIdx = it.getColumnIndexOrThrow(CalendarContract.Instances.END)
                 val colorIdx = it.getColumnIndexOrThrow(CalendarContract.Instances.DISPLAY_COLOR)
                 val allDayIdx = it.getColumnIndexOrThrow(CalendarContract.Instances.ALL_DAY)
+                val selfAttendeeStatusIdx = it.getColumnIndexOrThrow(CalendarContract.Instances.SELF_ATTENDEE_STATUS)
 
                 while (it.moveToNext() && events.size < limit) {
                     val title = it.getString(titleIdx) ?: "No Title"
                     val begin = it.getLong(beginIdx)
                     val endTime = it.getLong(endIdx)
+                    val isAllDay = it.getInt(allDayIdx) == 1
+                    val selfAttendeeStatus = it.getInt(selfAttendeeStatusIdx)
                     
                     // Skip if the event has already ended
                     if (endTime <= now) continue
+
+                    // Skip if the user has declined the event
+                    if (selfAttendeeStatus == CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED) continue
+
+                    // Skip if it's an all-day event and the user has opted to hide them
+                    if (hideAllDayEvents && isAllDay) continue
 
                     // Filter out Google Calendar "Working Location" pseudo-events
                     val lowerTitle = title.lowercase()
@@ -146,7 +157,7 @@ object CalendarHelper {
                             beginTime = begin,
                             endTime = endTime,
                             color = it.getInt(colorIdx),
-                            allDay = it.getInt(allDayIdx) == 1
+                            allDay = isAllDay
                         )
                     )
                 }

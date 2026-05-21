@@ -64,6 +64,9 @@ class MainActivity : ComponentActivity() {
                     var selectedCalendarIds by remember {
                         mutableStateOf(prefs.getStringSet("selected_calendars", emptySet()) ?: emptySet())
                     }
+                    var hideAllDayEvents by remember {
+                        mutableStateOf(prefs.getBoolean("hide_all_day_events", false))
+                    }
 
                     LaunchedEffect(permissionsGranted) {
                         if (permissionsGranted) {
@@ -124,6 +127,27 @@ class MainActivity : ComponentActivity() {
                                         isEnabled = checked
                                         prefs.edit().putBoolean("notification_enabled", checked).apply()
                                         NotificationUpdater.updateNotification(this@MainActivity)
+                                    }
+                                )
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "Hide All-Day Events",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Switch(
+                                    checked = hideAllDayEvents,
+                                    onCheckedChange = { checked ->
+                                        hideAllDayEvents = checked
+                                        prefs.edit().putBoolean("hide_all_day_events", checked).apply()
+                                        if (isEnabled) {
+                                            NotificationUpdater.updateNotification(this@MainActivity)
+                                        }
                                     }
                                 )
                             }
