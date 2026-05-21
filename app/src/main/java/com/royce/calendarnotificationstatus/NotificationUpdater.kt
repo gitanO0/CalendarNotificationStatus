@@ -122,7 +122,6 @@ object NotificationUpdater {
                 previousDayStr = currentDayStr
 
                 val itemView = RemoteViews(context.packageName, R.layout.notification_event_item)
-                itemView.setTextViewText(R.id.event_title, event.title)
                 
                 itemView.setTextViewText(R.id.event_day_of_week, dayOfWeekFormat.format(eventDate))
                 itemView.setTextViewText(R.id.event_day_number, dayNumberFormat.format(eventDate))
@@ -151,24 +150,31 @@ object NotificationUpdater {
                 val titlePastelColor = Color.HSVToColor(titleHsv)
 
                 itemView.setInt(R.id.event_color, "setBackgroundColor", event.color)
-                itemView.setTextColor(R.id.event_title, titlePastelColor)
                 itemView.setTextColor(R.id.event_day_of_week, titlePastelColor)
                 itemView.setTextColor(R.id.event_day_number, titlePastelColor)
                 itemView.setTextColor(R.id.event_time, pastelColor)
 
-                // Add happening now pulse if the event is currently active
+                // Add happening now pulse to title if the event starts in less than 10 minutes or is currently active
                 val currentTime = System.currentTimeMillis()
-                if (currentTime in event.beginTime..event.endTime) {
-                    itemView.setViewVisibility(R.id.pulse_flipper, android.view.View.VISIBLE)
+                val pulseStartTime = event.beginTime - (10 * 60 * 1000)
+                
+                if (currentTime in pulseStartTime..event.endTime) {
+                    itemView.setViewVisibility(R.id.event_title_flipper, android.view.View.VISIBLE)
+                    itemView.setViewVisibility(R.id.event_title_static, android.view.View.GONE)
                     
-                    // Note: RemoteViews doesn't allow changing backgroundTint directly on <shape> drawables
-                    // easily without API 31+. Instead, we will tint the text itself to match the pastel color
-                    // for the 'NOW' indicator to tie it into the theme.
-                    itemView.setTextColor(R.id.pulse_active, titlePastelColor)
-                    itemView.setTextColor(R.id.pulse_dim, titlePastelColor)
-                    itemView.setTextColor(R.id.pulse_faded, titlePastelColor)
+                    itemView.setTextViewText(R.id.event_title_frame1, event.title)
+                    itemView.setTextViewText(R.id.event_title_frame2, event.title)
+                    itemView.setTextViewText(R.id.event_title_frame3, event.title)
+
+                    itemView.setTextColor(R.id.event_title_frame1, titlePastelColor)
+                    itemView.setTextColor(R.id.event_title_frame2, titlePastelColor)
+                    itemView.setTextColor(R.id.event_title_frame3, titlePastelColor)
                 } else {
-                    itemView.setViewVisibility(R.id.pulse_flipper, android.view.View.GONE)
+                    itemView.setViewVisibility(R.id.event_title_flipper, android.view.View.GONE)
+                    itemView.setViewVisibility(R.id.event_title_static, android.view.View.VISIBLE)
+                    
+                    itemView.setTextViewText(R.id.event_title_static, event.title)
+                    itemView.setTextColor(R.id.event_title_static, titlePastelColor)
                 }
 
                 // Check for Smart Intent Actions
@@ -237,7 +243,6 @@ object NotificationUpdater {
                 // Add to collapsed view only if it's the first event (max 1 event to avoid clipping)
                 if (index < 1) {
                     val collapsedItemView = RemoteViews(context.packageName, R.layout.notification_event_item)
-                    collapsedItemView.setTextViewText(R.id.event_title, event.title)
                     collapsedItemView.setTextViewText(R.id.event_day_of_week, dayOfWeekFormat.format(eventDate))
                     collapsedItemView.setTextViewText(R.id.event_day_number, dayNumberFormat.format(eventDate))
                     if (event.allDay) {
@@ -248,10 +253,29 @@ object NotificationUpdater {
                         collapsedItemView.setTextViewText(R.id.event_time, "$startStr - $endStr")
                     }
                     collapsedItemView.setInt(R.id.event_color, "setBackgroundColor", event.color)
-                    collapsedItemView.setTextColor(R.id.event_title, titlePastelColor)
                     collapsedItemView.setTextColor(R.id.event_day_of_week, titlePastelColor)
                     collapsedItemView.setTextColor(R.id.event_day_number, titlePastelColor)
                     collapsedItemView.setTextColor(R.id.event_time, pastelColor)
+                    
+                    if (currentTime in pulseStartTime..event.endTime) {
+                        collapsedItemView.setViewVisibility(R.id.event_title_flipper, android.view.View.VISIBLE)
+                        collapsedItemView.setViewVisibility(R.id.event_title_static, android.view.View.GONE)
+                        
+                        collapsedItemView.setTextViewText(R.id.event_title_frame1, event.title)
+                        collapsedItemView.setTextViewText(R.id.event_title_frame2, event.title)
+                        collapsedItemView.setTextViewText(R.id.event_title_frame3, event.title)
+
+                        collapsedItemView.setTextColor(R.id.event_title_frame1, titlePastelColor)
+                        collapsedItemView.setTextColor(R.id.event_title_frame2, titlePastelColor)
+                        collapsedItemView.setTextColor(R.id.event_title_frame3, titlePastelColor)
+                    } else {
+                        collapsedItemView.setViewVisibility(R.id.event_title_flipper, android.view.View.GONE)
+                        collapsedItemView.setViewVisibility(R.id.event_title_static, android.view.View.VISIBLE)
+                        
+                        collapsedItemView.setTextViewText(R.id.event_title_static, event.title)
+                        collapsedItemView.setTextColor(R.id.event_title_static, titlePastelColor)
+                    }
+                    
                     collapsedItemView.setOnClickPendingIntent(R.id.event_item_root, openEventPendingIntent)
                     collapsedViews.addView(R.id.events_container, collapsedItemView)
                 }
@@ -262,9 +286,9 @@ object NotificationUpdater {
                         nextEventTimeMillis = event.endTime
                     }
                 }
-                if (event.beginTime > currentTime) {
-                    if (nextEventTimeMillis == null || event.beginTime < nextEventTimeMillis) {
-                        nextEventTimeMillis = event.beginTime
+                if (pulseStartTime > currentTime) {
+                    if (nextEventTimeMillis == null || pulseStartTime < nextEventTimeMillis) {
+                        nextEventTimeMillis = pulseStartTime
                     }
                 }
             }
