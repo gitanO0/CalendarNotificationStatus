@@ -116,11 +116,12 @@
 
             </ViewFlipper>
 
-            <!-- Spacer to push actions to the right -->
-            <View
+            <!-- Spacer to push actions to the right using an empty ImageView (View is not supported in RemoteViews) -->
+            <ImageView
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:importantForAccessibility="no" />
 
             <LinearLayout
                 android:id="@+id/action_container"
