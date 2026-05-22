@@ -27,14 +27,14 @@
             style="@style/TextAppearance.Compat.Notification.Line2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="8sp" />
+            android:textSize="10sp" />
 
         <TextView
             android:id="@+id/event_day_number"
             style="@style/TextAppearance.Compat.Notification.Title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
     </LinearLayout>
 

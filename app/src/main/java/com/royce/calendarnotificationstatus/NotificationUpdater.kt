@@ -466,7 +466,7 @@ object NotificationUpdater {
                 color = Color.TRANSPARENT // Color doesn't matter for CLEAR
                 textAlign = Paint.Align.CENTER
                 typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
-                textSize = 16 * density
+                textSize = 18 * density
                 strokeWidth = 0.5f * density
                 style = Paint.Style.FILL_AND_STROKE
                 xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
@@ -494,7 +494,7 @@ object NotificationUpdater {
                 color = Color.WHITE
                 textAlign = Paint.Align.CENTER
                 typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
-                textSize = 16 * density
+                textSize = 18 * density
                 strokeWidth = 0.5f * density
                 style = Paint.Style.FILL_AND_STROKE
             }
