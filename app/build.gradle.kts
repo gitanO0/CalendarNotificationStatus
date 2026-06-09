@@ -5,18 +5,15 @@ plugins {
 
 android {
     namespace = "com.royce.calendarnotificationstatus"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.royce.calendarnotificationstatus"
         minSdk = 26
-        targetSdk = 36
-        versionCode = 17
-        versionName = "1.05"
+        @Suppress("EditedTargetSdkVersion")
+        targetSdk = 37
+        versionCode = 18
+        versionName = "1.06"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

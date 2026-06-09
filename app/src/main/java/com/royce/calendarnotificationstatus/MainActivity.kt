@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
 
     private val permissionsToRequest = mutableListOf<String>().apply {
         add(Manifest.permission.READ_CALENDAR)
+        add(Manifest.permission.WRITE_CALENDAR)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             add(Manifest.permission.POST_NOTIFICATIONS)
         }
@@ -234,6 +235,16 @@ class MainActivity : ComponentActivity() {
                                                 val newSet = selectedCalendarIds.toMutableSet()
                                                 if (checked) {
                                                     newSet.add(calendar.id.toString())
+                                                    CalendarHelper.setCalendarSyncAndVisible(
+                                                        context = this@MainActivity, 
+                                                        calendarId = calendar.id, 
+                                                        accountName = calendar.accountName, 
+                                                        accountType = calendar.accountType, 
+                                                        enable = true
+                                                    )
+                                                    
+                                                    // Refresh the calendar list to show updated diagnostic state
+                                                    availableCalendars = CalendarHelper.getAvailableCalendars(this@MainActivity)
                                                 } else {
                                                     newSet.remove(calendar.id.toString())
                                                 }
@@ -246,7 +257,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                         Column {
                                             Text(text = calendar.displayName, style = MaterialTheme.typography.bodyLarge)
-                                            Text(text = calendar.accountName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                                            Text(text = "${calendar.accountName} (Visible: ${calendar.isVisible}, Synced: ${calendar.isSynced})", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                                         }
                                     }
                                 }

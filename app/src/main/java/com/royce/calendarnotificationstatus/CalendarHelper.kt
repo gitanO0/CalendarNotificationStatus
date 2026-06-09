@@ -1,6 +1,7 @@
 package com.royce.calendarnotificationstatus
 
 import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.provider.CalendarContract
@@ -20,7 +21,10 @@ data class CalendarEvent(
 data class CalendarInfo(
     val id: Long,
     val displayName: String,
-    val accountName: String
+    val accountName: String,
+    val accountType: String,
+    val isVisible: Boolean,
+    val isSynced: Boolean
 )
 
 object CalendarHelper {
@@ -30,7 +34,10 @@ object CalendarHelper {
         val projection = arrayOf(
             CalendarContract.Calendars._ID,
             CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
-            CalendarContract.Calendars.ACCOUNT_NAME
+            CalendarContract.Calendars.ACCOUNT_NAME,
+            CalendarContract.Calendars.ACCOUNT_TYPE,
+            CalendarContract.Calendars.VISIBLE,
+            CalendarContract.Calendars.SYNC_EVENTS
         )
         
         try {
@@ -46,13 +53,19 @@ object CalendarHelper {
                 val idIdx = it.getColumnIndexOrThrow(CalendarContract.Calendars._ID)
                 val nameIdx = it.getColumnIndexOrThrow(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME)
                 val accountIdx = it.getColumnIndexOrThrow(CalendarContract.Calendars.ACCOUNT_NAME)
+                val accountTypeIdx = it.getColumnIndexOrThrow(CalendarContract.Calendars.ACCOUNT_TYPE)
+                val visibleIdx = it.getColumnIndexOrThrow(CalendarContract.Calendars.VISIBLE)
+                val syncIdx = it.getColumnIndexOrThrow(CalendarContract.Calendars.SYNC_EVENTS)
                 
                 while (it.moveToNext()) {
                     calendars.add(
                         CalendarInfo(
                             id = it.getLong(idIdx),
                             displayName = it.getString(nameIdx) ?: "Unknown",
-                            accountName = it.getString(accountIdx) ?: "Unknown"
+                            accountName = it.getString(accountIdx) ?: "Unknown",
+                            accountType = it.getString(accountTypeIdx) ?: "Unknown",
+                            isVisible = it.getInt(visibleIdx) == 1,
+                            isSynced = it.getInt(syncIdx) == 1
                         )
                     )
                 }
@@ -61,6 +74,25 @@ object CalendarHelper {
             e.printStackTrace()
         }
         return calendars
+    }
+
+    fun setCalendarSyncAndVisible(context: Context, calendarId: Long, accountName: String, accountType: String, enable: Boolean) {
+        try {
+            val baseUri = ContentUris.withAppendedId(CalendarContract.Calendars.CONTENT_URI, calendarId)
+            val syncUri = baseUri.buildUpon()
+                .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+                .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, accountName)
+                .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, accountType)
+                .build()
+                
+            val values = ContentValues().apply {
+                put(CalendarContract.Calendars.VISIBLE, if (enable) 1 else 0)
+                put(CalendarContract.Calendars.SYNC_EVENTS, if (enable) 1 else 0)
+            }
+            context.contentResolver.update(syncUri, values, null, null)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun getUpcomingEvents(context: Context, limit: Int = 20): List<CalendarEvent> {
@@ -92,11 +124,13 @@ object CalendarHelper {
         val selectedCalendars = prefs.getStringSet("selected_calendars", null)
         val hideAllDayEvents = prefs.getBoolean("hide_all_day_events", false)
 
-        var selection = "${CalendarContract.Instances.VISIBLE} = 1"
+        var selection = ""
         
         if (selectedCalendars != null && selectedCalendars.isNotEmpty()) {
             val ids = selectedCalendars.joinToString(",")
-            selection += " AND ${CalendarContract.Instances.CALENDAR_ID} IN ($ids)"
+            selection = "${CalendarContract.Instances.CALENDAR_ID} IN ($ids)"
+        } else {
+            selection = "${CalendarContract.Instances.VISIBLE} = 1"
         }
 
         try {
